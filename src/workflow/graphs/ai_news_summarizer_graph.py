@@ -1,11 +1,11 @@
 from langgraph.graph import StateGraph, END
-from src.workflow.state import ChatbotState
+from src.workflow.states.chatbot_state import Chatbot_state
 from src.workflow.nodes.ai_news_summarizer_node import AINewsSummarizerNode
 
 class AINewsSummarizerGraph:
     def __init__(self, model):
         self.model = model
-        self.graph = StateGraph()
+        self.graph = StateGraph(Chatbot_state)
         
     def build_graph(self):
         """
@@ -21,8 +21,7 @@ class AINewsSummarizerGraph:
         # add edges
         self.graph.set_entry_point("fetch_ai_news")
         self.graph.add_edge("fetch_ai_news", "summarize_ai_news")
-        self.graph.add_edge("summarize_ai_news", "save_ai_results")
-        self.graph.add_edge("save_ai_results", END)
+        self.graph.add_edge("summarize_ai_news", END)
         
         return self.graph.compile()
         

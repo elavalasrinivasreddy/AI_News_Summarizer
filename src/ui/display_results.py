@@ -43,9 +43,9 @@ class DisplayResults:
                         else:
                             msg_to_process = msg_data
                         
-                        # # displaying tool message if any
+                        # Use expander for tool outputs
                         if isinstance(msg_to_process, ToolMessage):
-                            with st.chat_message("tool"):
+                            with st.expander("🔧 View Tool Execution Details"):
                                 st.markdown(f"**Tool Output:**\n{msg_to_process.content}")
                             generated_messages.append({"role": "tool", "content": msg_to_process.content})
 
@@ -60,9 +60,26 @@ class DisplayResults:
                                 generated_messages.append({"role": "assistant", "content": msg_to_process.content})
                             elif msg_to_process.tool_calls:
                                 # We add it to history but don't necessarily need a UI bubble for an empty tool call
-                                # However, to keep it simple for the session state dict, we'll store it.
-                                # In a real app we'd store the whole object.
                                 generated_messages.append({"role": "assistant", "content": ""}) 
                         
             return generated_messages
+
+        elif use_case == "AI News Summarizer":
+            frequency = self.user_input
+            with st.spinner(f"Fetching and summarising the news for {frequency}..."):
+                # The workflow invoke returns the final state
+                response_state = workflow.invoke({"messages": messages})
+                summary = response_state.get("summary", "")
+                
+                if summary:
+                    # Capture the summary but don't display it here if we want it at the top in main.py
+                    # Actually, if I display it here, it will be at the bottom of where main calls it.
+                    # I'll return it so main.py can choose.
+                    generated_messages.append({"role": "assistant", "content": summary})
+                    return generated_messages
+                else:
+                    st.error("Error: Failed to generate AI news summary.")
+                    return []
+                
+                
         

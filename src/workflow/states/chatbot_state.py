@@ -7,3 +7,6 @@ class Chatbot_state(TypedDict):
     This class is used to store the state of the chatbot.
     """
     messages: Annotated[List, add_messages] # List of messages
+    summary: str # Summary of the news
+    news_data: List # List of news data
+    frequency: str # Frequency of the news

@@ -11,6 +11,8 @@ class Layout:
     def render(self):
         st.set_page_config(page_title=self.config.get_page_title(), page_icon=":robot_face:", layout="wide")
         st.title(self.config.get_page_title())
+        if "IS_AI_NEWS_FETCHED" not in st.session_state:
+            st.session_state.IS_AI_NEWS_FETCHED = False
 
         with st.sidebar:
             # Get the options
@@ -28,15 +30,23 @@ class Layout:
                 self.user_selections["openai_model"] = st.selectbox("Select OpenAI Model", self.config.get_openai_models())
             
             # Get API Key and validate it
-            self.user_selections["llm_api_key"] = st.text_input("Enter your API key", type="password", key="api_key")
+            # Try to get from st.session_state or os.environ
+            default_llm_key = st.session_state.get("api_key", os.environ.get("OPENAI_API_KEY", os.environ.get("GROQ_API_KEY", os.environ.get("GOOGLE_API_KEY", ""))))
+            
+            self.user_selections["llm_api_key"] = st.text_input("Enter your API key", type="password", key="api_key", value=default_llm_key)
             if self.user_selections["llm_api_key"] == "":
                 st.error("Please enter your API key")
             else:
                 st.success("API key validated successfully")
+                # Also set it in environment for convenience if needed by underlying libs
+                if self.user_selections["llm_model"] == "OpenAI": os.environ["OPENAI_API_KEY"] = self.user_selections["llm_api_key"]
+                if self.user_selections["llm_model"] == "Groq": os.environ["GROQ_API_KEY"] = self.user_selections["llm_api_key"]
+                if self.user_selections["llm_model"] == "Gemini": os.environ["GOOGLE_API_KEY"] = self.user_selections["llm_api_key"]
 
             # Get the tool api key (Tavily)
             if self.user_selections["use_case"] == "Chatbot with Web Search" or self.user_selections["use_case"] == "AI News Summarizer":
-                os.environ["TAVILY_API_KEY"] = st.text_input("Enter your Tavily API key", type="password", key="tavily_api_key")
+                default_tavily_key = st.session_state.get("tavily_api_key", os.environ.get("TAVILY_API_KEY", ""))
+                os.environ["TAVILY_API_KEY"] = st.text_input("Enter your Tavily API key", type="password", key="tavily_api_key", value=default_tavily_key)
                 if os.environ["TAVILY_API_KEY"] == "":
                     st.error("Please enter your Tavily API key")
                 else:
@@ -48,6 +58,7 @@ class Layout:
                     time_frame = st.selectbox("Select Time Frame", ["Daily", "Weekly", "Monthly"], index=0)
                 if st.button("Fetch Latest AI News", use_container_width=True):
                     st.session_state.time_frame = time_frame
+                    st.session_state.IS_AI_NEWS_FETCHED = True
             
             if st.button("Clear Chat History"):
                 st.session_state.messages = []
