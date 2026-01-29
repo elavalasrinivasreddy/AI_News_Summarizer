@@ -10,9 +10,10 @@ class DisplayResults:
     def display(self, messages):
         use_case = self.use_case
         workflow = self.workflow
+        generated_messages = []
         
-        full_response = ""
         if use_case == "Chatbot":
+            full_response = ""
             # Stream the response from the workflow
             for event in workflow.stream({"messages": messages}):
                 for value in event.values():
@@ -21,34 +22,47 @@ class DisplayResults:
                         if isinstance(response_msg, list):
                             response_msg = response_msg[-1]
                         
-                        # Use a context manager for the assistant message
-                        with st.chat_message("assistant"):
-                            message_placeholder = st.empty()
-                            full_response += response_msg.content
-                            message_placeholder.markdown(full_response)
-            
-            return full_response
-
-        elif use_case == "Chatbot with Web Search": # display the tool message if any
-            # Stream the response from the workflow
-            for event in workflow.stream({"messages": messages}):
-                for value in event.values():
-                    if 'messages' in value:
-                        response_msg = value['messages']
-                        if isinstance(response_msg, list):
-                            response_msg = response_msg[-1]
-                        
-                        # displaying tool message if any
-                        # if isinstance(response_msg, ToolMessage):
-                        #     with st.chat_message("tool"):
-                        #         st.markdown(response_msg.content)
-
                         # Use a context manager for the assistant message
                         if isinstance(response_msg, AIMessage):
                             with st.chat_message("assistant"):
                                 message_placeholder = st.empty()
                                 full_response += response_msg.content
                                 message_placeholder.markdown(full_response)
+                                generated_messages.append({"role": "assistant", "content": response_msg.content})
+            
+            return generated_messages
+
+        elif use_case == "Chatbot with Web Search":
+            # Stream the response from the workflow
+            for event in workflow.stream({"messages": messages}):
+                for value in event.values():
+                    if 'messages' in value:
+                        msg_data = value['messages']
+                        if isinstance(msg_data, list):
+                            msg_to_process = msg_data[-1]
+                        else:
+                            msg_to_process = msg_data
                         
-            return full_response
+                        # # displaying tool message if any
+                        # if isinstance(msg_to_process, ToolMessage):
+                        #     with st.chat_message("tool"):
+                        #         st.markdown(f"**Tool Output:**\n{msg_to_process.content}")
+                        #     generated_messages.append({"role": "tool", "content": msg_to_process.content})
+
+                        # Use a context manager for the assistant message
+                        if isinstance(msg_to_process, AIMessage):
+                            # Record the message in history regardless of content if it has tool calls
+                            # Or if it has content, display and record it.
+                            if msg_to_process.content:
+                                with st.chat_message("assistant"):
+                                    message_placeholder = st.empty()
+                                    message_placeholder.markdown(msg_to_process.content)
+                                generated_messages.append({"role": "assistant", "content": msg_to_process.content})
+                            elif msg_to_process.tool_calls:
+                                # We add it to history but don't necessarily need a UI bubble for an empty tool call
+                                # However, to keep it simple for the session state dict, we'll store it.
+                                # In a real app we'd store the whole object.
+                                generated_messages.append({"role": "assistant", "content": ""}) 
+                        
+            return generated_messages
         

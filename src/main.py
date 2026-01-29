@@ -6,7 +6,7 @@ from src.workflow.llms.gemini import Gemini
 from src.workflow.graphs.chatbot_graph import Chatbot_graph
 from src.workflow.graphs.chatbot_with_tools_graph import Chatbot_with_tools_graph
 from src.ui.display_results import DisplayResults
-from langchain_core.messages import AIMessage,HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 def load_layout():
     """
@@ -27,8 +27,12 @@ def load_layout():
 
     # Display chat history from session state
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        if message["role"] == "tool":
+            with st.chat_message("tool"):
+                st.markdown(f"**Tool Output:**\n{message['content']}")
+        else:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
     user_input = st.chat_input("Ask a question ...")
     
@@ -84,6 +88,10 @@ def load_layout():
                 for m in st.session_state.messages:
                     if m["role"] == "user":
                         chat_history.append(HumanMessage(content=m["content"]))
+                    elif m["role"] == "tool":
+                        # We need a tool_call_id, but for simple history we might not have it 
+                        # In a more robust implementation, we'd store the full message object
+                        chat_history.append(ToolMessage(content=m["content"], tool_call_id="unknown"))
                     else:
                         chat_history.append(AIMessage(content=m["content"]))
                 
@@ -95,7 +103,7 @@ def load_layout():
                 
                 # Update session state with the new message
                 st.session_state.messages.append({"role": "user", "content": user_input})
-                st.session_state.messages.append({"role": "assistant", "content": display_results.display(chat_history)})
+                st.session_state.messages.extend(display_results.display(chat_history))
                 # Rerun the app to display the new message
                 st.rerun()
                 
