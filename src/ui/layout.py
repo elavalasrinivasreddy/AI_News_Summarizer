@@ -35,12 +35,19 @@ class Layout:
                 st.success("API key validated successfully")
 
             # Get the tool api key (Tavily)
-            if self.user_selections["use_case"] == "Chatbot with Web Search":
+            if self.user_selections["use_case"] == "Chatbot with Web Search" or self.user_selections["use_case"] == "AI News Summarizer":
                 os.environ["TAVILY_API_KEY"] = st.text_input("Enter your Tavily API key", type="password", key="tavily_api_key")
                 if os.environ["TAVILY_API_KEY"] == "":
                     st.error("Please enter your Tavily API key")
                 else:
                     st.success("Tavily API key validated successfully")
+
+            if self.user_selections["use_case"] == "AI News Summarizer":
+                st.subheader("AI News Summarizer")
+                with st.sidebar:
+                    time_frame = st.selectbox("Select Time Frame", ["Daily", "Weekly", "Monthly"], index=0)
+                if st.button("Fetch Latest AI News", use_container_width=True):
+                    st.session_state.time_frame = time_frame
             
             if st.button("Clear Chat History"):
                 st.session_state.messages = []
