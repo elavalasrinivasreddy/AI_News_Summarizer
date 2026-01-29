@@ -29,26 +29,27 @@ A powerful, agentic AI application built with **Streamlit** and **LangGraph** th
 
 ## 🏗️ Architecture
 
-The project uses **LangGraph** to manage stateful, multi-step agentic workflows.
+The application dynamically selects and executes specific **LangGraph** workflows based on the user's choice in the UI.
 
 ```mermaid
 graph TD
-    A[User Input] --> B{Use Case Selection}
-    
-    subgraph "AI News Summarizer Graph"
-    B -->|AI News| C[Fetch News Node]
-    C --> D[Summarize News Node]
-    D --> E[Save Results Node]
-    E --> F[Display Summary]
-    end
-    
-    subgraph "Chatbot with Tools Graph"
-    B -->|Web Search| G[Chatbot Node]
-    G --> H{Need Tool?}
-    H -->|Yes| I[Tavily Search Tool]
-    I --> G
-    H -->|No| J[Display Response]
-    end
+    A[User Selection in UI] --> B{Switch Use Case}
+
+    B -->|Standard Chatbot| START1
+    START1(START) --> NODE1[Chatbot]
+    NODE1 --> END1(END)
+
+    B -->|Chatbot with Tools| START2
+    START2(START) --> NODE2[Chatbot]
+    NODE2 --> TOOLS2[Tools]
+    TOOLS2 --> NODE2
+    NODE2 --> END2(END)
+
+    B -->|AI News Summarizer| START3
+    START3(START) --> NODE3a[Fetch Latest AI News]
+    NODE3a --> NODE3b[Summarize AI News]
+    NODE3b --> NODE3c[Display Results]
+    NODE3c --> END3(END)
 ```
 
 ---
