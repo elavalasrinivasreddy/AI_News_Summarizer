@@ -4,7 +4,6 @@ from src.workflow.nodes.chatbot_node import Chatbot_node
 from src.workflow.nodes.tools_node import Tools_node
 from src.workflow.tools.tools import get_tools
 from langgraph.prebuilt import tools_condition
-from IPython.display import Image
 
 class Chatbot_with_tools_graph:
     def __init__(self, model):
